@@ -9,11 +9,11 @@ router.use(csrfProtection);
 
 router.get('/', function(req, res, next) {
     var products = Product.find(function (err, docs) {
-      var productSingle = [];
-      var sizes = 3;
-      for(var x = 0; x <docs.length; x += sizes ){
-        productSingle.push(docs.slice(x, x+sizes));
-      }
+        var productSingle = [];
+        var sizes = 3;
+        for(var x = 0; x <docs.length; x += sizes ){
+            productSingle.push(docs.slice(x, x+sizes));
+        }
         res.render('shop/index', {title: 'Shopping Cart', products:productSingle});
     });
 });
@@ -32,4 +32,14 @@ router.post('/user/signup', passport.authenticate('local.signup', {
 router.get('/user/profile', function(req,res,next){
     res.render('user/profile');
 });
+router.get('/user/signin', function(req,res, next ){
+    var messages = req.flash('error');
+    res.render('user/signin',{csrfToken:req.csrfToken(), messages:messages, hasErrors: messages.length > 0});
+});
+
+router.post('/user/signin', passport.authenticate('local.signin', {
+    successRedirect: '/user/profile',
+    failureRedirect:'/user/signin',
+    failureFlash:true
+}));
 module.exports = router;
