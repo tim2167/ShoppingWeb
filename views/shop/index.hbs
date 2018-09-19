@@ -1,4 +1,11 @@
 
+<div class="row">
+    <div class="col-sm-6 col-md-4 col-md-offset-4 col-sm-offset-3">
+        <div id="success" class="alert alert-success"{{#if noMessages}}hidden{{/if}}>
+            {{ successMsg}}
+        </div>
+    </div>
+</div>
 {{# each products }}
     <div class="row">
     {{# each this}}
@@ -9,14 +16,21 @@
                     <h3>{{this.title}}</h3>
                     <p class = "description">{{this.description}}.</p>
                     <div class ="clearfix">
-                        <div class="price pull-left">${{this.price}}</div>
-                        <a href="#" class="btn btn-success pull-right" role="button">Add To Shopping Cart</a>
+                        <div class="price pull-right">${{this.price}}</div>
+                        <form action="/addCart/{{this.id}}/{{this.identifier}}" method="get">
+                            <div class="form-group">
+                                <label for="amount">Amount</label>
+                                <input type ="number" min ="1" id="amount" name="amount" placeholder="1" value = "1" class="form-control"></input>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Purchase</button>
+                        </form>
                     </div>
                 </div>
             </div>
         </div>
         {{/each}}
         </div>
+
 
 {{/each}}
 
