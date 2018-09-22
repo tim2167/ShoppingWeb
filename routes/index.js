@@ -6,7 +6,7 @@ var Cart = require('../models/cart');
 var Order = require('../models/order');
 
 router.get('/', function(req, res, next) {
-
+    var successMsg = req.flash('success')[0];
     Product.find(function (err, docs) {
         var successMsg = req.flash('success')[0];
         var productSingle = [];
@@ -17,11 +17,11 @@ router.get('/', function(req, res, next) {
         res.render('shop/index', {title: 'Shopping Cart', products:productSingle, successMsg: successMsg , noMessages:!successMsg});
     });
 });
-router.get('/addCart/:id/:identifier', function(req, res,next){
+router.get('/addCart/:id/:identifier', function(req, res,next){ //script to add a product into shopping car when apurchase is made on the main webpage.
     var productId = req.params.id;
     console.log(req.param("amount"));
     var cart = new Cart(req.session.cart ? req.session.cart : {});
-    Product.findById(productId, function(err, product){
+    Product.findById(productId, function(err, product){ //find if such a product exists and if it does call the add function to add into cart then redirect to the main shopping page.
         if(err) {
             return res.redirect('/');
         }
@@ -32,21 +32,21 @@ router.get('/addCart/:id/:identifier', function(req, res,next){
     });
 });
 
-router.get('/changeAmount/:identifier', function(req,res,next){
+router.get('/changeAmount/:identifier', function(req,res,next){ //script when change amount is called in the shopping cart page.
     var productId = req.params.identifier;
     var cart = new Cart(req.session.cart ? req.session.cart : {});
     cart.changeAmount(productId, req.param("amount"));
     req.session.cart = cart;
     res.redirect('/shoppingCart');
 });
-router.get('/removeItem/:identifier', function(req,res,next){
+router.get('/removeItem/:identifier', function(req,res,next){ //script when remove item is called in the shopping cart page
     var productId = req.params.identifier;
     var cart = new Cart(req.session.cart ? req.session.cart : {});
     cart.removeItem(productId);
     req.session.cart = cart;
     res.redirect('/shoppingCart');
 });
-router.get('/shoppingCart', function(req,res,next){
+router.get('/shoppingCart', function(req,res,next){ //show the shopping cart page.
     if(!req.session.cart){
         return res.render('shop/shoppingCart',{products:null});
 
@@ -56,33 +56,49 @@ router.get('/shoppingCart', function(req,res,next){
 });
 
 
-router.get('/checkout',isLoggedIn, function(req,res,next){
+router.get('/checkout',isLoggedIn, function(req,res,next){ //get the checkout page
     if(!req.session.cart){
         return res.redirect('/shoppingCart');
     }
-    var errMsg = req.flash('error')[0] //Set errMsg to nothing since I am not adding a stripe payment module.
+    var errMsg = req.flash('error')[0];
     var cart = new Cart(req.session.cart);
     res.render('shop/checkout', {total:cart.actualPrice, errMsg: errMsg , noError: !errMsg});
 });
-router.post('/checkout', isLoggedIn, function(req,res,next){
-    if(!req.session.cart){
+router.post('/checkout', isLoggedIn, function(req,res,next) { //create a order when the user checks out
+    if (!req.session.cart) {
         return res.redirect('/shopping-cart');
     }
+    var stripe = require("stripe")("sk_test_M8JHp9NL0nBuaAORpqLxpaQp");
+
+    const token = req.body.stripeToken; // Using Express
     var cart = new Cart(req.session.cart);
-    var order = new Order({
-        user: req.user,
-        cart: cart,
-        address: req.body.address,
-        name: req.body.name
+    stripe.charges.create({
+        amount: cart.totalPrice * 100,
+        currency: "usd",
+        source: token, // obtained with Stripe.js
+        description: "Test Charge"
+    }, function(err, charge) {
+        if (err) {
+            req.flash('error', err.message);
+            return res.redirect('/checkout');
+        }
+        var order = new Order({
+            user: req.user,
+            cart: cart,
+            address: req.body.address,
+            name: req.body.name,
+            paymentId: charge.id
+        });
+        order.save(function (err, result) {
+            req.flash('success', 'Successfully bought product!');
+            req.session.cart = null;
+            res.redirect('/');
+        });
     });
-    order.save(function(err,result){
-    req.flash('success','Successfully bought!');
-    req.session.cart = null;
-    res.redirect('/')});
 });
 module.exports = router;
 
-function isLoggedIn(req, res, next){
+function isLoggedIn(req, res, next){ //helper function to make sure site/pages that prevents no logged in users from going sites they shouldnt access
     if(req.isAuthenticated()){
         return next();
     }

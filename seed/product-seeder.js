@@ -1,7 +1,7 @@
 var Product = require('../models/product');
 var mongoose = require('mongoose');
 mongoose.connect('mongodb://127.0.0.1:27017/shopping');
-var products = [
+var products = [ //to populate the shopping website's products.
     new Product({
     imagePath: 'https://images-na.ssl-images-amazon.com/images/I/911uAMIhbqL._SL1500_.jpg',
     title: 'Star Wars IV : A New Hope DVD',
