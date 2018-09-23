@@ -52,7 +52,7 @@ router.get('/shoppingCart', function(req,res,next){ //show the shopping cart pag
 
     }
     var cart = new Cart(req.session.cart);
-    res.render('shop/shoppingCart', {products:cart.generateArray(),totalPrice: cart.totalPrice, dvdDiscount: cart.dvdDiscount, blueRayDiscount: cart.blueRayDiscount , totalDiscount: cart.totalDiscountedPrice, finalPrice:cart.actualPrice});
+    res.render('shop/shoppingCart', {products:cart.generateArray(), totalPrice: cart.totalPrice, dvdDiscount: cart.dvdDiscount, blueRayDiscount: cart.blueRayDiscount , totalDiscount: cart.totalDiscountedPrice, finalPrice:cart.actualPrice});
 });
 
 
@@ -60,40 +60,42 @@ router.get('/checkout',isLoggedIn, function(req,res,next){ //get the checkout pa
     if(!req.session.cart){
         return res.redirect('/shoppingCart');
     }
+    console.log("checkout");
     var errMsg = req.flash('error')[0];
     var cart = new Cart(req.session.cart);
-    res.render('shop/checkout', {total:cart.actualPrice, errMsg: errMsg , noError: !errMsg});
+    res.render('shop/checkout', {total:cart.actualPrice, errMsg: errMsg, chargePrice: cart.actualPrice*100 , noError: !errMsg});
 });
 router.post('/checkout', isLoggedIn, function(req,res,next) { //create a order when the user checks out
     if (!req.session.cart) {
         return res.redirect('/shopping-cart');
     }
     var stripe = require("stripe")("sk_test_M8JHp9NL0nBuaAORpqLxpaQp");
-
+    console.log(stripe);
+    var chargePrice = req.body.chargePrice;
     const token = req.body.stripeToken; // Using Express
     var cart = new Cart(req.session.cart);
-    stripe.charges.create({
-        amount: cart.totalPrice * 100,
+    var charge = stripe.charges.create({
+        amount: chargePrice,
         currency: "usd",
         source: token, // obtained with Stripe.js
         description: "Test Charge"
     }, function(err, charge) {
-        if (err) {
-            req.flash('error', err.message);
-            return res.redirect('/checkout');
+        if (err && err.type ==="StripeCardError") {
+            console.log("Your Card was declinde");
         }
-        var order = new Order({
-            user: req.user,
-            cart: cart,
-            address: req.body.address,
-            name: req.body.name,
-            paymentId: charge.id
-        });
-        order.save(function (err, result) {
-            req.flash('success', 'Successfully bought product!');
-            req.session.cart = null;
-            res.redirect('/');
-        });
+        else {
+            var order = new Order({
+                user: req.user,
+                cart: cart,
+                address: req.body.address,
+                name: req.body.name,
+            });
+            order.save(function (err, result) {
+                req.flash('success', 'Successfully bought product!');
+                req.session.cart = null;
+                res.redirect('/');
+            });
+        }
     });
 });
 module.exports = router;
