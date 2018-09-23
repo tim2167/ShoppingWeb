@@ -1,7 +1,11 @@
 Welcome to ShoppingWeb , a ecommerce template website made by Tim2167!
+
 A Heroku Version and a non local MongoDB server is planned in the next update!
+
 It uses Stripe as the Payment Processor!
+
 The following web app is created with node.js and express.js and mongoDB (local database)
+
 The IDE I used to write this website was with is php-storm on Mac OS X Sierra.
 
 express.js will install npm along with itself.
