@@ -60,7 +60,6 @@ router.get('/checkout',isLoggedIn, function(req,res,next){ //get the checkout pa
     if(!req.session.cart){
         return res.redirect('/shoppingCart');
     }
-    console.log("checkout");
     var errMsg = req.flash('error')[0];
     var cart = new Cart(req.session.cart);
     res.render('shop/checkout', {total:cart.actualPrice, errMsg: errMsg, chargePrice: cart.actualPrice*100 , noError: !errMsg});
@@ -70,7 +69,6 @@ router.post('/checkout', isLoggedIn, function(req,res,next) { //create a order w
         return res.redirect('/shopping-cart');
     }
     var stripe = require("stripe")("sk_test_M8JHp9NL0nBuaAORpqLxpaQp");
-    console.log(stripe);
     var chargePrice = req.body.chargePrice;
     const token = req.body.stripeToken; // Using Express
     var cart = new Cart(req.session.cart);
@@ -81,7 +79,7 @@ router.post('/checkout', isLoggedIn, function(req,res,next) { //create a order w
         description: "Test Charge"
     }, function(err, charge) {
         if (err && err.type ==="StripeCardError") {
-            console.log("Your Card was declinde");
+            console.log("Your Card was declined");
         }
         else {
             var order = new Order({
